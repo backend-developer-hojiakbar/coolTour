@@ -1,10 +1,47 @@
 # api/views.py
 from rest_framework import viewsets, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User, Vibe, Service, Guide, CarRental, Plan, Booking
-from .serializers import UserSerializer, VibeSerializer, ServiceSerializer, GuideSerializer, CarRentalSerializer, PlanSerializer, BookingSerializer
+from .serializers import UserSerializer, RegisterSerializer, LoginSerializer, VibeSerializer, ServiceSerializer, GuideSerializer, CarRentalSerializer, PlanSerializer, BookingSerializer
 from .utils import generate_daily_plans
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def register_view(request):
+    serializer = RegisterSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save()
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user': UserSerializer(user).data
+        }, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login_view(request):
+    serializer = LoginSerializer(data=request.data)
+    if serializer.is_valid():
+        phone_number = serializer.validated_data['phone_number']
+        password = serializer.validated_data['password']
+        try:
+            user = User.objects.get(phone_number=phone_number)
+            if user.check_password(password):
+                refresh = RefreshToken.for_user(user)
+                return Response({
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token),
+                    'user': UserSerializer(user).data
+                }, status=status.HTTP_200_OK)
+            return Response({'error': 'Invalid password'}, status=status.HTTP_401_UNAUTHORIZED)
+        except User.DoesNotExist:
+            return Response({'error': 'User with this phone number does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()

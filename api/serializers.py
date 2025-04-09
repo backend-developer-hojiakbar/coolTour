@@ -7,6 +7,30 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'email', 'user_type', 'phone_number', 'fio', 'address', 'company_name', 'profile_image']
 
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['email', 'phone_number', 'password', 'user_type', 'fio', 'address', 'company_name', 'profile_image']
+
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            email=validated_data['email'],
+            password=validated_data['password'],
+            phone_number=validated_data.get('phone_number', ''),
+            user_type=validated_data.get('user_type', 'traveller'),
+            fio=validated_data.get('fio', ''),
+            address=validated_data.get('address', ''),
+            company_name=validated_data.get('company_name', ''),
+            profile_image=validated_data.get('profile_image', None)
+        )
+        return user
+
+class LoginSerializer(serializers.Serializer):
+    phone_number = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+
 class VibeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vibe
