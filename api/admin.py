@@ -4,7 +4,7 @@ from .models import User, Vibe, Service, Guide, CarRental, Plan, DailyPlan, Book
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ['email', 'user_type', 'fio', 'phone_number']
+    list_display = ['phone_number', 'user_type', 'fio']
 
 @admin.register(Vibe)
 class VibeAdmin(admin.ModelAdmin):

@@ -17,7 +17,7 @@ schema_view = get_schema_view(
         contact=openapi.Contact(email="soyibnazarovhoji@gmail.com")
     ),
     public=True,
-    permission_classes=[AllowAny],  # Autentifikatsiyasiz kirishga ruxsat
+    permission_classes=[AllowAny],
 )
 
 urlpatterns = [

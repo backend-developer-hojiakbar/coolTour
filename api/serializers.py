@@ -5,20 +5,19 @@ from .models import User, Vibe, Service, Guide, CarRental, Plan, DailyPlan, Book
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'email', 'user_type', 'phone_number', 'fio', 'address', 'company_name', 'profile_image']
+        fields = ['id', 'phone_number', 'user_type', 'fio', 'address', 'company_name', 'profile_image']
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
-        fields = ['email', 'phone_number', 'password', 'user_type', 'fio', 'address', 'company_name', 'profile_image']
+        fields = ['phone_number', 'password', 'user_type', 'fio', 'address', 'company_name', 'profile_image']
 
     def create(self, validated_data):
         user = User.objects.create_user(
-            email=validated_data['email'],
+            phone_number=validated_data['phone_number'],
             password=validated_data['password'],
-            phone_number=validated_data.get('phone_number', ''),
             user_type=validated_data.get('user_type', 'traveller'),
             fio=validated_data.get('fio', ''),
             address=validated_data.get('address', ''),
