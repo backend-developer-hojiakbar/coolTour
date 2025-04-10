@@ -1,6 +1,6 @@
 # api/admin.py
 from django.contrib import admin
-from .models import User, Vibe, Service, Guide, CarRental, Plan, DailyPlan, Booking
+from .models import User, Vibe, Service, Guide, CarRental, Plan, DailyPlan, Booking, RecommendedLocation
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
@@ -29,6 +29,10 @@ class PlanAdmin(admin.ModelAdmin):
 @admin.register(DailyPlan)
 class DailyPlanAdmin(admin.ModelAdmin):
     list_display = ['plan', 'day', 'service']
+
+@admin.register(RecommendedLocation)
+class RecommendedLocationAdmin(admin.ModelAdmin):
+    list_display = ['name', 'place', 'source']
 
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):

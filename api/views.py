@@ -6,7 +6,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User, Vibe, Service, Guide, CarRental, Plan, Booking
 from .serializers import UserSerializer, RegisterSerializer, LoginSerializer, VibeSerializer, ServiceSerializer, GuideSerializer, CarRentalSerializer, PlanSerializer, BookingSerializer
-from .utils import generate_daily_plans
+from .utils import generate_daily_plans, fetch_recommended_locations
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -63,16 +63,27 @@ class CarRentalViewSet(viewsets.ModelViewSet):
     queryset = CarRental.objects.all()
     serializer_class = CarRentalSerializer
 
+# api/views.py
+# api/views.py
 class PlanViewSet(viewsets.ModelViewSet):
     queryset = Plan.objects.all()
     serializer_class = PlanSerializer
 
     @action(detail=False, methods=['post'])
     def build_my_trip(self, request):
+        if not request.user.is_authenticated:
+            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         plan = serializer.save(user=request.user)
+
+        # DailyPlanlarni AI yordamida yaratish
         generate_daily_plans(plan)
+
+        # Recommended locationsni olish
+        fetch_recommended_locations(plan)
+
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class BookingViewSet(viewsets.ModelViewSet):

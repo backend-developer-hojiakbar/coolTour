@@ -131,6 +131,18 @@ class DailyPlan(models.Model):
     def __str__(self):
         return f"Day {self.day} of {self.plan}"
 
+# RecommendedLocation Model
+class RecommendedLocation(models.Model):
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='recommended_locations')
+    name = models.CharField(max_length=100)
+    place = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+    image_url = models.URLField(blank=True, null=True)
+    source = models.CharField(max_length=50, default='internal')  # "internal" yoki "external"
+
+    def __str__(self):
+        return f"{self.name} in {self.place}"
+
 # Booking Model
 class Booking(models.Model):
     STATUS_CHOICES = (

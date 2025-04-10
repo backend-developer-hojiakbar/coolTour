@@ -1,6 +1,6 @@
 # api/serializers.py
 from rest_framework import serializers
-from .models import User, Vibe, Service, Guide, CarRental, Plan, DailyPlan, Booking
+from .models import User, Vibe, Service, Guide, CarRental, Plan, DailyPlan, Booking, RecommendedLocation
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -59,13 +59,23 @@ class DailyPlanSerializer(serializers.ModelSerializer):
         model = DailyPlan
         fields = ['id', 'day', 'service']
 
+class RecommendedLocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RecommendedLocation
+        fields = ['id', 'name', 'place', 'description', 'image_url', 'source']
+
+# api/serializers.py
+# api/serializers.py
+# api/serializers.py
 class PlanSerializer(serializers.ModelSerializer):
-    vibes = VibeSerializer(many=True)
+    vibes = serializers.PrimaryKeyRelatedField(queryset=Vibe.objects.all(), many=True)
     daily_plans = DailyPlanSerializer(many=True, read_only=True)
+    recommended_locations = RecommendedLocationSerializer(many=True, read_only=True)
+    user = serializers.PrimaryKeyRelatedField(read_only=True)  # user maydonini read_only qilamiz
 
     class Meta:
         model = Plan
-        fields = ['id', 'user', 'place', 'start_date', 'end_date', 'budget', 'travellers', 'vibes', 'daily_plans', 'created_at']
+        fields = ['id', 'user', 'place', 'start_date', 'end_date', 'budget', 'travellers', 'vibes', 'daily_plans', 'recommended_locations', 'created_at']
 
 class BookingSerializer(serializers.ModelSerializer):
     plan = PlanSerializer()
