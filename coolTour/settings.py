@@ -2,16 +2,14 @@
 from pathlib import Path
 import os
 from datetime import timedelta
+from decouple import config
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Quick-start development settings - unsuitable for production
 SECRET_KEY = 'django-insecure-yuq3g2b1@gv2qajoxmmu50bv3ky%i7gw6je34u$#x*!=2hg2&('
 DEBUG = True
 ALLOWED_HOSTS = ["*"]
 
-# Application definition
 INSTALLED_APPS = [
     'jazzmin',
     'django.contrib.admin',
@@ -63,7 +61,6 @@ WSGI_APPLICATION = 'coolTour.wsgi.application'
 
 AUTH_USER_MODEL = 'api.User'
 
-# Database
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -102,14 +99,13 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',  # Hamma API'larni autentifikatsiyasiz ishlatish uchun
     ],
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
     ],
 }
 
-# Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -125,13 +121,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Internationalization
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Tashkent'
 USE_I18N = True
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
@@ -141,9 +135,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Google Places API kaliti
-GOOGLE_API_KEY = 'AIzaSyD4q54gfWXFEpC-dAZ4o0afBFuM9LtaPdU'  # Google API kalitini qo‘shing
+GOOGLE_API_KEY = 'AIzaSyD4q54gfWXFEpC-dAZ4o0afBFuM9LtaPdU'
 
-# SIMPLE_JWT sozlamalari
+# Gemini API kaliti
+GEMINI_API_KEY = 'AIzaSyD4q54gfWXFEpC-dAZ4o0afBFuM9LtaPdU'
+
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=10),

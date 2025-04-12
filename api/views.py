@@ -4,8 +4,8 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import User, Vibe, Service, Guide, CarRental, Plan, Booking
-from .serializers import UserSerializer, RegisterSerializer, LoginSerializer, VibeSerializer, ServiceSerializer, GuideSerializer, CarRentalSerializer, PlanSerializer, BookingSerializer
+from .models import User, Place, Budget, Vibe, Service, Guide, CarRental, Plan, Booking
+from .serializers import UserSerializer, RegisterSerializer, LoginSerializer, PlaceSerializer, BudgetSerializer, VibeSerializer, ServiceSerializer, GuideSerializer, CarRentalSerializer, PlanSerializer, BookingSerializer
 from .utils import generate_daily_plans, fetch_recommended_locations
 
 @api_view(['POST'])
@@ -46,37 +46,62 @@ def login_view(request):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [AllowAny]
+
+class PlaceViewSet(viewsets.ModelViewSet):
+    queryset = Place.objects.all()
+    serializer_class = PlaceSerializer
+    permission_classes = [AllowAny]
+
+class BudgetViewSet(viewsets.ModelViewSet):
+    queryset = Budget.objects.all()
+    serializer_class = BudgetSerializer
+    permission_classes = [AllowAny]
 
 class VibeViewSet(viewsets.ModelViewSet):
     queryset = Vibe.objects.all()
     serializer_class = VibeSerializer
+    permission_classes = [AllowAny]
 
 class ServiceViewSet(viewsets.ModelViewSet):
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
+    permission_classes = [AllowAny]
 
 class GuideViewSet(viewsets.ModelViewSet):
     queryset = Guide.objects.all()
     serializer_class = GuideSerializer
+    permission_classes = [AllowAny]
 
 class CarRentalViewSet(viewsets.ModelViewSet):
     queryset = CarRental.objects.all()
     serializer_class = CarRentalSerializer
+    permission_classes = [AllowAny]
 
-# api/views.py
-# api/views.py
 class PlanViewSet(viewsets.ModelViewSet):
     queryset = Plan.objects.all()
     serializer_class = PlanSerializer
+    permission_classes = [AllowAny]
 
     @action(detail=False, methods=['post'])
     def build_my_trip(self, request):
+        # Agar foydalanuvchi autentifikatsiya qilinmagan bo'lsa, default user yaratamiz
         if not request.user.is_authenticated:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+            try:
+                user = User.objects.get(phone_number="guest_user")
+            except User.DoesNotExist:
+                user = User.objects.create_user(
+                    phone_number="guest_user",
+                    password="guest123",
+                    user_type="traveller",
+                    fio="Guest User"
+                )
+        else:
+            user = request.user
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        plan = serializer.save(user=request.user)
+        plan = serializer.save(user=user)
 
         # DailyPlanlarni AI yordamida yaratish
         generate_daily_plans(plan)
@@ -89,3 +114,4 @@ class PlanViewSet(viewsets.ModelViewSet):
 class BookingViewSet(viewsets.ModelViewSet):
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
+    permission_classes = [AllowAny]

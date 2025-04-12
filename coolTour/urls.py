@@ -8,7 +8,6 @@ from drf_yasg import openapi
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.permissions import AllowAny
 
-# Swagger UI sozlamalari
 schema_view = get_schema_view(
     openapi.Info(
         title="CRM API",

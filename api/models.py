@@ -57,6 +57,26 @@ class User(AbstractUser):
     def __str__(self):
         return self.phone_number
 
+# Place Model
+class Place(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True, null=True)
+    country = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+# Budget Model
+class Budget(models.Model):
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=10, default='USD')
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.amount} {self.currency}"
+
 # Vibe Model
 class Vibe(models.Model):
     name = models.CharField(max_length=100)
@@ -68,7 +88,7 @@ class Vibe(models.Model):
 class Service(models.Model):
     agency = models.ForeignKey(User, on_delete=models.CASCADE, related_name='services', limit_choices_to={'user_type': 'agency'})
     name = models.CharField(max_length=100)
-    place = models.CharField(max_length=100)
+    place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='services')
     description = models.TextField()
     duration = models.CharField(max_length=50)
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -102,6 +122,7 @@ class CarRental(models.Model):
     price_per_day = models.DecimalField(max_digits=10, decimal_places=2, default=300000)
     category = models.CharField(max_length=50, default="Rental Car")
     features = models.TextField(default="Automatic transmission, Fuel-efficient, Compact size, Air conditioning, Bluetooth connectivity")
+    max_capacity = models.IntegerField(default=4)  # Maksimal odam sig'ish soni
     image = models.ImageField(upload_to='car_rentals/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -111,16 +132,16 @@ class CarRental(models.Model):
 # Plan Model
 class Plan(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='plans')
-    place = models.CharField(max_length=100)
+    place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='plans')
+    budget = models.ForeignKey(Budget, on_delete=models.CASCADE, related_name='plans')
     start_date = models.DateField()
     end_date = models.DateField()
-    budget = models.CharField(max_length=50)
     travellers = models.IntegerField(default=1)
     vibes = models.ManyToManyField(Vibe, related_name='plans')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Plan for {self.user.phone_number} to {self.place}"
+        return f"Plan for {self.user.phone_number} to {self.place.name}"
 
 # DailyPlan Model
 class DailyPlan(models.Model):
@@ -135,13 +156,14 @@ class DailyPlan(models.Model):
 class RecommendedLocation(models.Model):
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='recommended_locations')
     name = models.CharField(max_length=100)
-    place = models.CharField(max_length=100)
+    place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='recommended_locations')
     description = models.TextField(blank=True, null=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Narx qo'shildi
     image_url = models.URLField(blank=True, null=True)
-    source = models.CharField(max_length=50, default='internal')  # "internal" yoki "external"
+    source = models.CharField(max_length=50, default='internal')
 
     def __str__(self):
-        return f"{self.name} in {self.place}"
+        return f"{self.name} in {self.place.name}"
 
 # Booking Model
 class Booking(models.Model):
@@ -155,7 +177,8 @@ class Booking(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookings')
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='bookings')
     guide = models.ForeignKey(Guide, on_delete=models.SET_NULL, blank=True, null=True, related_name='bookings')
-    car_rental = models.ForeignKey(CarRental, on_delete=models.SET_NULL, blank=True, null=True, related_name='bookings')
+    car_rentals = models.ManyToManyField(CarRental, related_name='bookings', blank=True)  # Bir nechta CarRental tanlash uchun
+    recommended_locations = models.ManyToManyField(RecommendedLocation, related_name='bookings', blank=True)  # RecommendedLocation tanlash uchun
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     num_people = models.IntegerField()
