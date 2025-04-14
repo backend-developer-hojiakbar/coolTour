@@ -1,10 +1,12 @@
 from rest_framework import serializers
 from .models import User, Place, Budget, Vibe, Service, Guide, CarRental, Plan, DailyPlan, Booking, RecommendedLocation
 
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'phone_number', 'user_type', 'fio', 'address', 'company_name', 'profile_image']
+
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -25,24 +27,29 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
         return user
 
+
 class LoginSerializer(serializers.Serializer):
     phone_number = serializers.CharField()
     password = serializers.CharField(write_only=True)
+
 
 class PlaceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Place
         fields = ['id', 'name', 'description', 'country', 'main_image', 'thumbnail_image', 'created_at']
 
+
 class BudgetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Budget
         fields = ['id', 'amount', 'currency', 'description', 'created_at']
 
+
 class VibeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vibe
         fields = ['id', 'name']
+
 
 class ServiceSerializer(serializers.ModelSerializer):
     service_vibe = VibeSerializer()
@@ -50,7 +57,9 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Service
-        fields = ['id', 'agency', 'name', 'place', 'description', 'duration', 'price', 'category', 'image', 'travellers', 'service_vibe', 'created_at']
+        fields = ['id', 'agency', 'name', 'place', 'description', 'duration', 'price', 'category', 'image',
+                  'travellers', 'service_vibe', 'created_at']
+
 
 class GuideSerializer(serializers.ModelSerializer):
     agency = UserSerializer()
@@ -59,12 +68,15 @@ class GuideSerializer(serializers.ModelSerializer):
         model = Guide
         fields = ['id', 'agency', 'name', 'bio', 'experience', 'skills', 'price', 'image', 'created_at']
 
+
 class CarRentalSerializer(serializers.ModelSerializer):
     agency = UserSerializer()
 
     class Meta:
         model = CarRental
-        fields = ['id', 'agency', 'name', 'price_per_day', 'category', 'features', 'max_capacity', 'image', 'created_at']
+        fields = ['id', 'agency', 'name', 'price_per_day', 'category', 'features', 'max_capacity', 'image',
+                  'created_at']
+
 
 class DailyPlanSerializer(serializers.ModelSerializer):
     service = ServiceSerializer()
@@ -73,12 +85,14 @@ class DailyPlanSerializer(serializers.ModelSerializer):
         model = DailyPlan
         fields = ['id', 'day', 'service']
 
+
 class RecommendedLocationSerializer(serializers.ModelSerializer):
     place = PlaceSerializer()
 
     class Meta:
         model = RecommendedLocation
         fields = ['id', 'name', 'place', 'description', 'price', 'image_url', 'source']
+
 
 class PlanSerializer(serializers.ModelSerializer):
     vibes = serializers.PrimaryKeyRelatedField(queryset=Vibe.objects.all(), many=True)
@@ -90,7 +104,28 @@ class PlanSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Plan
-        fields = ['id', 'user', 'place', 'budget', 'start_date', 'end_date', 'travellers', 'vibes', 'daily_plans', 'recommended_locations', 'created_at']
+        fields = ['id', 'user', 'place', 'budget', 'start_date', 'end_date', 'travellers', 'vibes', 'daily_plans',
+                  'recommended_locations', 'created_at']
+
+    def get_daily_plans(self, obj):
+        daily_plans = DailyPlan.objects.filter(plan=obj).order_by('day')
+        grouped_plans = {}
+
+        for plan in daily_plans:
+            day = plan.day
+            if day not in grouped_plans:
+                grouped_plans[day] = []
+            grouped_plans[day].append(plan)
+
+        result = []
+        for day, plans in grouped_plans.items():
+            result.append({
+                'day': day,
+                'services': DailyPlanSerializer(plans, many=True).data
+            })
+
+        return result
+
 
 class BookingSerializer(serializers.ModelSerializer):
     plan = PlanSerializer()
@@ -100,7 +135,8 @@ class BookingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Booking
-        fields = ['id', 'user', 'plan', 'guide', 'car_rentals', 'recommended_locations', 'start_time', 'end_time', 'num_people', 'status', 'total_price', 'created_at']
+        fields = ['id', 'user', 'plan', 'guide', 'car_rentals', 'recommended_locations', 'start_time', 'end_time',
+                  'num_people', 'status', 'total_price', 'created_at']
 
     def create(self, validated_data):
         car_rentals_data = validated_data.pop('car_rentals', [])
