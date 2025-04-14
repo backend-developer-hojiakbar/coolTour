@@ -61,8 +61,8 @@ class Place(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, null=True)
     country = models.CharField(max_length=100, blank=True, null=True)
-    main_image = models.ImageField(upload_to='places/main/', blank=True, null=True)  # Katta rasm
-    thumbnail_image = models.ImageField(upload_to='places/thumbnails/', blank=True, null=True)  # Kichik rasm
+    main_image = models.ImageField(upload_to='places/main/', blank=True, null=True)
+    thumbnail_image = models.ImageField(upload_to='places/thumbnails/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -90,11 +90,12 @@ class Service(models.Model):
     agency = models.ForeignKey(User, on_delete=models.CASCADE, related_name='services', limit_choices_to={'user_type': 'agency'})
     name = models.CharField(max_length=100)
     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='services')
+    address = models.TextField(blank=True, null=True)  # Yangi address maydoni
     description = models.TextField()
     duration = models.CharField(max_length=50)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     category = models.CharField(max_length=50)
-    image = models.ImageField(upload_to='services/', blank=False, null=False)  # Majburiy qilindi
+    image = models.ImageField(upload_to='services/', blank=False, null=False)
     travellers = models.IntegerField(default=1)
     service_vibe = models.ForeignKey(Vibe, on_delete=models.CASCADE, related_name='vibe')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -123,7 +124,7 @@ class CarRental(models.Model):
     price_per_day = models.DecimalField(max_digits=10, decimal_places=2, default=300000)
     category = models.CharField(max_length=50, default="Rental Car")
     features = models.TextField(default="Automatic transmission, Fuel-efficient, Compact size, Air conditioning, Bluetooth connectivity")
-    max_capacity = models.IntegerField(default=4)  # Maksimal odam sig'ish soni
+    max_capacity = models.IntegerField(default=4)
     image = models.ImageField(upload_to='car_rentals/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -134,6 +135,7 @@ class CarRental(models.Model):
 class Plan(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='plans')
     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='plans')
+    address = models.TextField(blank=True, null=True)  # Yangi address maydoni
     budget = models.ForeignKey(Budget, on_delete=models.CASCADE, related_name='plans')
     start_date = models.DateField()
     end_date = models.DateField()
@@ -158,10 +160,12 @@ class RecommendedLocation(models.Model):
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='recommended_locations')
     name = models.CharField(max_length=100)
     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='recommended_locations')
+    address = models.TextField(blank=True, null=True)  # Yangi address maydoni
     description = models.TextField(blank=True, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    image_url = models.URLField(blank=False, null=False)  # Majburiy qilindi
+    image_url = models.URLField(blank=False, null=False)
     source = models.CharField(max_length=50, default='internal')
+    vibes = models.ManyToManyField(Vibe, related_name='recommended_locations')  # Yangi vibes maydoni
 
     def __str__(self):
         return f"{self.name} in {self.place.name}"

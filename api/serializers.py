@@ -57,7 +57,7 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Service
-        fields = ['id', 'agency', 'name', 'place', 'description', 'duration', 'price', 'category', 'image',
+        fields = ['id', 'agency', 'name', 'place', 'address', 'description', 'duration', 'price', 'category', 'image',
                   'travellers', 'service_vibe', 'created_at']
 
 
@@ -88,24 +88,26 @@ class DailyPlanSerializer(serializers.ModelSerializer):
 
 class RecommendedLocationSerializer(serializers.ModelSerializer):
     place = PlaceSerializer()
+    vibes = VibeSerializer(many=True)
 
     class Meta:
         model = RecommendedLocation
-        fields = ['id', 'name', 'place', 'description', 'price', 'image_url', 'source']
+        fields = ['id', 'name', 'place', 'address', 'description', 'price', 'image_url', 'source', 'vibes']
 
 
 class PlanSerializer(serializers.ModelSerializer):
-    vibes = serializers.PrimaryKeyRelatedField(queryset=Vibe.objects.all(), many=True)
     place = serializers.PrimaryKeyRelatedField(queryset=Place.objects.all())
     budget = serializers.PrimaryKeyRelatedField(queryset=Budget.objects.all())
-    daily_plans = DailyPlanSerializer(many=True, read_only=True)
+    vibes = serializers.PrimaryKeyRelatedField(queryset=Vibe.objects.all(), many=True)
+    daily_plans = serializers.SerializerMethodField()
     recommended_locations = RecommendedLocationSerializer(many=True, read_only=True)
     user = serializers.PrimaryKeyRelatedField(read_only=True)
+    total_price = serializers.SerializerMethodField()  # Umumiy narx
 
     class Meta:
         model = Plan
-        fields = ['id', 'user', 'place', 'budget', 'start_date', 'end_date', 'travellers', 'vibes', 'daily_plans',
-                  'recommended_locations', 'created_at']
+        fields = ['id', 'user', 'place', 'address', 'budget', 'start_date', 'end_date', 'travellers', 'vibes',
+                  'daily_plans', 'recommended_locations', 'total_price', 'created_at']
 
     def get_daily_plans(self, obj):
         daily_plans = DailyPlan.objects.filter(plan=obj).order_by('day')
@@ -119,12 +121,19 @@ class PlanSerializer(serializers.ModelSerializer):
 
         result = []
         for day, plans in grouped_plans.items():
+            day_total_price = sum(plan.service.price for plan in plans)  # Kunlik umumiy narx
             result.append({
                 'day': day,
-                'services': DailyPlanSerializer(plans, many=True).data
+                'services': DailyPlanSerializer(plans, many=True).data,
+                'day_total_price': float(day_total_price)  # Kunlik narx
             })
 
         return result
+
+    def get_total_price(self, obj):
+        daily_plans = DailyPlan.objects.filter(plan=obj)
+        total_price = sum(plan.service.price for plan in daily_plans)  # Butun plan bo‘yicha narx
+        return float(total_price)
 
 
 class BookingSerializer(serializers.ModelSerializer):
@@ -147,27 +156,21 @@ class BookingSerializer(serializers.ModelSerializer):
         end_time = validated_data.get('end_time')
         num_people = validated_data.get('num_people')
 
-        # Narxni hisoblash
         daily_plans = plan.daily_plans.all()
         services_price = sum(dp.service.price for dp in daily_plans)
         guide_price = guide.price if guide else 0
         days = (end_time - start_time).days + 1
 
-        # CarRental narxini hisoblash
         car_rental_price = 0
         for car_rental in car_rentals_data:
             car_rental_price += car_rental.price_per_day * days
 
-        # RecommendedLocation narxini hisoblash
         recommended_locations_price = sum(loc.price for loc in recommended_locations_data)
 
         total_price = services_price + guide_price + car_rental_price + recommended_locations_price
         validated_data['total_price'] = total_price
 
-        # Booking obyektini yaratish
         booking = Booking.objects.create(**validated_data)
-
-        # CarRental va RecommendedLocation'larni qo'shish
         booking.car_rentals.set(car_rentals_data)
         booking.recommended_locations.set(recommended_locations_data)
 
