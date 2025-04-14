@@ -1,4 +1,3 @@
-# api/models.py
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.utils import timezone
@@ -62,6 +61,8 @@ class Place(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, null=True)
     country = models.CharField(max_length=100, blank=True, null=True)
+    main_image = models.ImageField(upload_to='places/main/', blank=True, null=True)  # Katta rasm
+    thumbnail_image = models.ImageField(upload_to='places/thumbnails/', blank=True, null=True)  # Kichik rasm
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -93,7 +94,7 @@ class Service(models.Model):
     duration = models.CharField(max_length=50)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     category = models.CharField(max_length=50)
-    image = models.ImageField(upload_to='services/', blank=True, null=True)
+    image = models.ImageField(upload_to='services/', blank=False, null=False)  # Majburiy qilindi
     travellers = models.IntegerField(default=1)
     service_vibe = models.ForeignKey(Vibe, on_delete=models.CASCADE, related_name='vibe')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -158,8 +159,8 @@ class RecommendedLocation(models.Model):
     name = models.CharField(max_length=100)
     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='recommended_locations')
     description = models.TextField(blank=True, null=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Narx qo'shildi
-    image_url = models.URLField(blank=True, null=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    image_url = models.URLField(blank=False, null=False)  # Majburiy qilindi
     source = models.CharField(max_length=50, default='internal')
 
     def __str__(self):
@@ -177,8 +178,8 @@ class Booking(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookings')
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='bookings')
     guide = models.ForeignKey(Guide, on_delete=models.SET_NULL, blank=True, null=True, related_name='bookings')
-    car_rentals = models.ManyToManyField(CarRental, related_name='bookings', blank=True)  # Bir nechta CarRental tanlash uchun
-    recommended_locations = models.ManyToManyField(RecommendedLocation, related_name='bookings', blank=True)  # RecommendedLocation tanlash uchun
+    car_rentals = models.ManyToManyField(CarRental, related_name='bookings', blank=True)
+    recommended_locations = models.ManyToManyField(RecommendedLocation, related_name='bookings', blank=True)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     num_people = models.IntegerField()

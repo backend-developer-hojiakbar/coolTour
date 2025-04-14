@@ -1,12 +1,14 @@
-# api/views.py
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import User, Place, Budget, Vibe, Service, Guide, CarRental, Plan, Booking
-from .serializers import UserSerializer, RegisterSerializer, LoginSerializer, PlaceSerializer, BudgetSerializer, VibeSerializer, ServiceSerializer, GuideSerializer, CarRentalSerializer, PlanSerializer, BookingSerializer
+from .models import User, Place, Budget, Vibe, Service, Guide, CarRental, Plan, Booking, RecommendedLocation, DailyPlan
+from .serializers import UserSerializer, RegisterSerializer, LoginSerializer, PlaceSerializer, BudgetSerializer, \
+    VibeSerializer, ServiceSerializer, GuideSerializer, CarRentalSerializer, PlanSerializer, BookingSerializer, \
+    RecommendedLocationSerializer
 from .utils import generate_daily_plans, fetch_recommended_locations
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -21,6 +23,7 @@ def register_view(request):
             'user': UserSerializer(user).data
         }, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -43,40 +46,48 @@ def login_view(request):
             return Response({'error': 'User with this phone number does not exist'}, status=status.HTTP_404_NOT_FOUND)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
+
 
 class PlaceViewSet(viewsets.ModelViewSet):
     queryset = Place.objects.all()
     serializer_class = PlaceSerializer
     permission_classes = [AllowAny]
 
+
 class BudgetViewSet(viewsets.ModelViewSet):
     queryset = Budget.objects.all()
     serializer_class = BudgetSerializer
     permission_classes = [AllowAny]
+
 
 class VibeViewSet(viewsets.ModelViewSet):
     queryset = Vibe.objects.all()
     serializer_class = VibeSerializer
     permission_classes = [AllowAny]
 
+
 class ServiceViewSet(viewsets.ModelViewSet):
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
     permission_classes = [AllowAny]
+
 
 class GuideViewSet(viewsets.ModelViewSet):
     queryset = Guide.objects.all()
     serializer_class = GuideSerializer
     permission_classes = [AllowAny]
 
+
 class CarRentalViewSet(viewsets.ModelViewSet):
     queryset = CarRental.objects.all()
     serializer_class = CarRentalSerializer
     permission_classes = [AllowAny]
+
 
 class PlanViewSet(viewsets.ModelViewSet):
     queryset = Plan.objects.all()
@@ -85,7 +96,6 @@ class PlanViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def build_my_trip(self, request):
-        # Agar foydalanuvchi autentifikatsiya qilinmagan bo'lsa, default user yaratamiz
         if not request.user.is_authenticated:
             try:
                 user = User.objects.get(phone_number="guest_user")
@@ -103,15 +113,40 @@ class PlanViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         plan = serializer.save(user=user)
 
-        # DailyPlanlarni AI yordamida yaratish
         generate_daily_plans(plan)
-
-        # Recommended locationsni olish
         fetch_recommended_locations(plan)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 class BookingViewSet(viewsets.ModelViewSet):
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
     permission_classes = [AllowAny]
+
+
+class RecommendedLocationViewSet(viewsets.ModelViewSet):
+    queryset = RecommendedLocation.objects.all()
+    serializer_class = RecommendedLocationSerializer
+    permission_classes = [AllowAny]
+
+    @action(detail=True, methods=['post'])
+    def copy_from_daily_plan(self, request, pk=None):
+        recommended_location = self.get_object()
+        daily_plan_id = request.data.get('daily_plan_id')
+
+        try:
+            daily_plan = DailyPlan.objects.get(id=daily_plan_id)
+            service = daily_plan.service
+
+            recommended_location.name = service.name
+            recommended_location.description = service.description
+            recommended_location.price = service.price
+            recommended_location.image_url = str(
+                service.image.url) if service.image else "https://via.placeholder.com/400x300.png?text=No+Image+Available"
+            recommended_location.save()
+
+            serializer = self.get_serializer(recommended_location)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except DailyPlan.DoesNotExist:
+            return Response({'error': 'DailyPlan not found'}, status=status.HTTP_404_NOT_FOUND)

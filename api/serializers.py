@@ -1,4 +1,3 @@
-# api/serializers.py
 from rest_framework import serializers
 from .models import User, Place, Budget, Vibe, Service, Guide, CarRental, Plan, DailyPlan, Booking, RecommendedLocation
 
@@ -33,7 +32,7 @@ class LoginSerializer(serializers.Serializer):
 class PlaceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Place
-        fields = ['id', 'name', 'description', 'country', 'created_at']
+        fields = ['id', 'name', 'description', 'country', 'main_image', 'thumbnail_image', 'created_at']
 
 class BudgetSerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,4 +1,3 @@
-# project/settings.py
 from pathlib import Path
 import os
 from datetime import timedelta
@@ -99,7 +98,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',  # Hamma API'larni autentifikatsiyasiz ishlatish uchun
+        'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
@@ -134,11 +133,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Google Places API kaliti
 GOOGLE_API_KEY = 'AIzaSyD4q54gfWXFEpC-dAZ4o0afBFuM9LtaPdU'
-
-# Gemini API kaliti
-GEMINI_API_KEY = 'AIzaSyD4q54gfWXFEpC-dAZ4o0afBFuM9LtaPdU'
+OPENAI_API_KEY = GOOGLE_API_KEY
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
